@@ -1,0 +1,43 @@
+---
+- hosts: all
+  sudo: yes
+
+  tasks:
+  - name: Import EPEL and Remi GPG keys.
+    rpm_key:
+      key: "{{ item }}"
+      state: present
+    with_items:
+    - "https://fedoraproject.org/static/0608B895.txt"
+    - "http://rpms.famillecollet.com/RPM-GPG-KEY-remi"
+
+  - name: Install EPEL and Remi repos.
+    command: "rpm -Uvh --force {{ item.href }}"
+    creates: "{{ item.creates }}"
+    with_items:
+    - {
+      href: "http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.no\ 16 arch.rpm",
+      creates: "/etc/yum.repos.d/epel.repo"
+      }
+    - {
+      href: "http://rpms.famillecollet.com/enterprise/remi-release-6.rpm",
+      creates: "/etc/yum.repos.d/remi.repo"
+      }
+
+  - name: Disable firewall
+    service:
+      name: iptables
+      state: stopped
+      enabled: no
+
+  - name: Insall Node.js and npm
+    yum:
+      name: npm
+      state: present
+      enablerepo: epel
+
+  - name: Install Forever
+    npm:
+      name: forever
+      global: yes
+      state: latest
